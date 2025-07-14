@@ -16,17 +16,44 @@ type cacheEntry struct {
 }
 
 func NewCache(intival time.Duration) Cache {
-	return Cache{}
+	newCache := Cache{
+		cacheData: make(map[string]cacheEntry),
+		mu:        &sync.Mutex{},
+	}
+	go func() {
+		for {
+			time.Sleep(intival)
+			newCache.reapLoop(intival)
+		}
+
+	}()
+	return newCache
 }
 
 func (c *Cache) Add(key string, val []byte) {
-
+	newCacheEntry := cacheEntry{
+		createdAt: time.Now(),
+		val:       val,
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.cacheData[key] = newCacheEntry
 }
 
 func (c Cache) Get(key string) ([]byte, bool) {
-	return []byte{}, false
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	cacheEntry, exists := c.cacheData[key]
+	return cacheEntry.val, exists
 }
 
-func (c *Cache) reapLoop() {
-
+func (c *Cache) reapLoop(intival time.Duration) {
+	expiryTime := time.Now().Add(-intival)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for key, value := range c.cacheData {
+		if value.createdAt.Before(expiryTime) {
+			delete(c.cacheData, key)
+		}
+	}
 }
