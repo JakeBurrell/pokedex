@@ -32,6 +32,16 @@ func init() {
 			description: "Displays the previous 20 locations in the Pokemon world",
 			callback:    commandMapb,
 		},
+		"explore": {
+			name:        "explore",
+			description: "Displays found pokemon for a specified location",
+			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Attempts to catch a particular pokemon",
+			callback:    commandCatch,
+		},
 	}
 }
 
@@ -39,6 +49,8 @@ type config struct {
 	pokeapiClient        pokeapi.Client
 	nextLocationsURL     *string
 	previousLocationsURL *string
+	nextCommand          *string
+	pokedex              map[string]pokeapi.Pokemon
 }
 
 func startRepl(cfg *config) {
@@ -53,6 +65,9 @@ func startRepl(cfg *config) {
 			if !exists {
 				fmt.Println("Unkown Command")
 				continue
+			}
+			if len(words) > 1 {
+				cfg.nextCommand = &words[1]
 			}
 			err := command.callback(cfg)
 			if err != nil {
